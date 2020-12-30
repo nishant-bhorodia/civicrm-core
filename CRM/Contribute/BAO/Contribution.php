@@ -508,6 +508,21 @@ class CRM_Contribute_BAO_Contribution extends CRM_Contribute_DAO_Contribution {
     }
 
     $isCompleted = ('Completed' === CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_Contribution', 'contribution_status_id', $contribution->contribution_status_id));
+    if ($isCompleted) {
+      $contributionSoft = civicrm_api4('ContributionSoft', 'get', [
+        'where' => [
+          ['contribution_id', '=', $contribution->id],
+        ],
+        'checkPermissions' => FALSE,
+      ]);
+
+      if (!empty($contributionSoft)) {
+        //Send notification to owner for PCP
+        if ($contributionSoft->column('pcp_id')) {
+          CRM_Contribute_Form_Contribution_Confirm::pcpNotifyOwner($contribution, $contributionSoft[0]);
+        }
+      }
+    }
     if (!empty($params['on_behalf'])
       ||  $isCompleted
     ) {
